@@ -88,8 +88,11 @@ namespace csc{
 
             size_t number_of_edge_configurations = (1 << ((num_vertices-1)*(num_vertices-2) / 2)); //2^(number_of_remaining_edges) (after fixing edges of node 0)
             for(size_t i = 0; i < number_of_edge_configurations; i++){
+                if(i%100 == 0){
+                    std::cout << "Configuration " << i << " of " << number_of_edge_configurations << "\n";
+                }
                 m.setEdgesAccordingToIndex(i);
-                std::cout << i << "\n";
+                //std::cout << i << "\n";
                 std::vector<cycle> cycles(m.findCycles());
                 EdgeToLiteral e2l(cycles);
                 kissat *solver = kissat_init();
@@ -106,10 +109,21 @@ namespace csc{
                 //add "at-most-k"-clauses, ensuring that only the specified number of edges can be removed (i.e. only the specified number of variables can be set to true)
                 generate_at_most_k(e2l.counter-1, number_of_removable_edges, solver);
 
-                int result = kissat_solve(solver);
+                int result = kissat_solve(solver);  //10: satisfiable; 20: unsatisfiable
                 if(result == 20){
                     std::cout << "Unsatisfiable graph found \n";
+                    std::cout << "Adjacency matrix:\n";
                     m.print();
+                    std::cout << "\nCycles:\n";
+                    for(auto& cycle: cycles){
+                        std::cout << "(";
+                        for(auto v : cycle){
+                            std::cout << static_cast<uint>(v) << ", ";
+                        }
+                        std::cout << static_cast<uint>(cycle.front());
+                        std::cout << ")";
+                    }
+                    std::cout << "\n";
                     std::exit(-1);
                 }
 
