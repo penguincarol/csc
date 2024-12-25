@@ -1,0 +1,3 @@
+/home/johnny/CLionProjects/csc/build/CMakeFiles/csc.dir
+/home/johnny/CLionProjects/csc/build/CMakeFiles/edit_cache.dir
+/home/johnny/CLionProjects/csc/build/CMakeFiles/rebuild_cache.dir

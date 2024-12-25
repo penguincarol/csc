@@ -1,0 +1,34 @@
+//look at that again when you can focus..
+
+// A simplified Johnson's algorithm structure
+void johnsonAlgorithm(Graph& graph) {
+    std::vector<std::vector<int>> allCycles;
+    std::vector<int> stack;
+
+    for (int i = 0; i < graph.size(); ++i) {
+        std::vector<int> blocked(graph.size(), 0);
+        std::vector<int> blockList(graph.size());
+
+        // Start DFS to find cycles
+        findCycles(i, blocked, blockList, stack, allCycles);
+    }
+
+    // Return or print all cycles found
+}
+
+void findCycles(int v, std::vector<int>& blocked, std::vector<int>& blockList,
+                std::vector<int>& stack, std::vector<std::vector<int>>& allCycles) {
+    stack.push_back(v);
+    blocked[v] = 1;
+
+    for (auto neighbor : graph[v]) {
+        if (neighbor == stack.front()) {  // Found a cycle
+            allCycles.push_back(stack);
+        } else if (!blocked[neighbor]) {
+            findCycles(neighbor, blocked, blockList, stack, allCycles);
+        }
+    }
+
+    stack.pop_back();
+    blocked[v] = 0;
+}

@@ -1,0 +1,1 @@
+/usr/bin/c++ -Wl,--no-whole-archive CMakeFiles/csc.dir/main.cpp.o CMakeFiles/csc.dir/AdjacencyMatrix.cpp.o -o csc  /home/johnny/git/kissat/build/libkissat.a 
