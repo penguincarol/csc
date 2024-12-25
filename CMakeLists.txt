@@ -22,7 +22,8 @@ add_executable(csc main.cpp AdjacencyMatrix.cpp
         GraphToSAT.h
         GraphToSAT.cpp
         KemenySolver.h
-        KemenySolver.cpp)
+        KemenySolver.cpp
+        ScoreVector.h)
 
 # Link Kissat library
 target_link_libraries(csc PRIVATE ${KISSAT_DIR}/build/libkissat.a)

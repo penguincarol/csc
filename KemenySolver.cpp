@@ -1,6 +1,7 @@
 #include "KemenySolver.h"
 #include "AdjacencyMatrix.h"
 #include "Edge.h"
+#include "ScoreVector.h"
 
 extern "C" {
 #include "kissat.h"
@@ -40,37 +41,7 @@ namespace csc{
     }
 
 
-    struct KemenyScoreVector{
-        KemenyScoreVector(size_t num_vertices_managed, uint8_t maximum_kemeny_score): score_vector(num_vertices_managed, 0), maximum_kemeny_score(maximum_kemeny_score){};
 
-        KemenyScoreVector& operator++(){
-            size_t i = score_vector.size()-1;
-            score_vector[i] += 1;
-            while(score_vector[i] > maximum_kemeny_score){
-                score_vector[i] = 0;
-                i--;
-                score_vector[i] += 1;
-                if(i == 0){
-                    break;
-                }
-            }
-            return *this;
-        }
-
-        bool operator==(const KemenyScoreVector& other) const{
-            return other.score_vector == score_vector;
-        }
-
-        //this is not equal to the std::iterator end(), but similar. this function returns the first KemenyScoreVector that is invalid, since it contains one kemeny-rank, that is too high
-        KemenyScoreVector end(){
-            KemenyScoreVector returnvalue(score_vector.size(), maximum_kemeny_score);
-            returnvalue.score_vector[0] = maximum_kemeny_score+1;
-            return returnvalue;
-        }
-
-        std::vector<uint8_t> score_vector;
-        uint8_t maximum_kemeny_score;
-    };
 
     void solveKemeny(){
         AdjacencyMatrix m{};
@@ -85,6 +56,10 @@ namespace csc{
             } for(size_t i = kemeny_score_node_0+1; i < num_vertices; i++){
                 m.setEdge(i, 0);
             }
+
+            //ScoreVector scoresDominators(kemeny_score_node_0, kemeny_score_node_0);
+            //ScoreVector firstInvalidScoreV(scoresDominators.end());
+
 
             size_t number_of_edge_configurations = (1 << ((num_vertices-1)*(num_vertices-2) / 2)); //2^(number_of_remaining_edges) (after fixing edges of node 0)
             for(size_t i = 0; i < number_of_edge_configurations; i++){
@@ -108,6 +83,7 @@ namespace csc{
 
                 //add "at-most-k"-clauses, ensuring that only the specified number of edges can be removed (i.e. only the specified number of variables can be set to true)
                 generate_at_most_k(e2l.counter-1, number_of_removable_edges, solver);
+                //std::cout << "countersample:" << e2l.counter-1 << "\n";
 
                 int result = kissat_solve(solver);  //10: satisfiable; 20: unsatisfiable
                 if(result == 20){
@@ -124,7 +100,7 @@ namespace csc{
                         std::cout << ")";
                     }
                     std::cout << "\n";
-                    std::exit(-1);
+                    std::exit(0);
                 }
 
                 kissat_release(solver);
