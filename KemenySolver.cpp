@@ -12,6 +12,15 @@ extern "C" {
 #include <algorithm>
 
 namespace csc{
+    namespace log_info{
+        size_t counter_trivial_instances = 0;
+        size_t counter_non_trivial_instances = 0;
+
+        void print_log_info(){
+            std::cout << "number of trivial instances (no kissat needed): " << counter_non_trivial_instances << "\n"
+            << "number of non-trivial instances (number of times kissat used): " << counter_trivial_instances << "\n";
+        }
+    }
 
     void generate_at_most_k(size_t n, size_t k, kissat* solver) {
         if(k >= n) return;
@@ -58,13 +67,11 @@ namespace csc{
             } for(size_t i = start_index_dominators; i < num_vertices; i++){
                 m.setEdge(i, 0);
             }
-            std::cout << "here\n";
 
             //there are kemeny_score_node_0 many vertices that are being dominated by node 0. their maximum score can be kemeny_score_node_0
-            ScoreVector scoresDominatedVertices(kemeny_score_node_0, kemeny_score_node_0);
+            ScoreVector scoresDominatedVertices(kemeny_score_node_0, std::min(kemeny_score_node_0, number_dominators));
             ScoreVector firstInvalidScoreV(scoresDominatedVertices.end());
             while(scoresDominatedVertices != firstInvalidScoreV){
-                std::cout << "here2\n";
 
                 //set edges between node 1 (dominated by node 0) and the dominators of node 0
                 {
@@ -83,23 +90,67 @@ namespace csc{
                 //the bitmaps define the edges between the dominators and the dominated (w.r.t. node 0).
                 //obviously the graph is not bipartit, but these are the "bipartit edges" between those 2 sets of nodes
                 BitMapsForScoreVector bipartitEdgesBitmap(scoresDominatedVertices, number_dominators);
-                do{
+                bool nextEdgeConfiguration = true;
+                while(nextEdgeConfiguration){
                     m.setBipartitEdges(bipartitEdgesBitmap, number_dominated);
-                    std::cout << "here3\n";
                     const size_t number_of_remaining_edges = (number_dominated*(number_dominated-1)/2) + ((number_dominators*(number_dominators-1))/2);
                     const size_t number_edge_configurations = (1 << number_of_remaining_edges); //2^(number_of_remaining_edges)
                     for(size_t i = 0; i < number_edge_configurations; i++){
                         m.setNonBipartitEdgesAccordingToIndex(i, number_dominated);
                         //TODO: tournament graph should be set here and we can create SAT-formula
                         //TODO: can still filter out if kemeny-score of individual vertices is too high, or number of cycles is low enough..
+#ifdef DEBUG
                         std::cout << "next graph: \n";
                         m.print();
                         if(!m.isTournamentGraph()){
                             std::cout<<  "not a tournament graph\n";
                             exit(0);
                         }
+#endif
+                        std::vector<cycle> cycles(m.findCycles());
+                        if(cycles.size() <= number_of_removable_edges){ //graphs, where we can remove 1 edge for each cycle are trivially solvable
+                            log_info::counter_trivial_instances +=1;
+                            continue;
+                        } else{
+                            log_info::counter_non_trivial_instances +=1;
+                        }
+                        EdgeToLiteral e2l(cycles);
+                        kissat *solver = kissat_init();
+                        for(auto& cycle: cycles){
+                            for(size_t v=1; v < cycle.size(); v++){
+                                kissat_add(solver, e2l.edge_to_literal({cycle[v-1], cycle[v]}));
+                            }
+                            kissat_add(solver, e2l.edge_to_literal({cycle.back(), cycle.front()}));
+                            kissat_add(solver, 0);
+                        }
+
+                        //add "at-most-k"-clauses, ensuring that only the specified number of edges can be removed (i.e. only the specified number of variables can be set to true)
+                        generate_at_most_k(e2l.counter-1, number_of_removable_edges, solver);
+
+                        int result = kissat_solve(solver);  //10: satisfiable; 20: unsatisfiable
+                        if(result == 20){
+                            std::cout << "Unsatisfiable graph found \n";
+                            std::cout << "Adjacency matrix:\n";
+                            m.print();
+                            std::cout << "\nCycles:\n";
+                            for(auto& cycle: cycles){
+                                std::cout << "(";
+                                for(auto v : cycle){
+                                    std::cout << static_cast<uint>(v) << ", ";
+                                }
+                                std::cout << static_cast<uint>(cycle.front());
+                                std::cout << ")";
+                            }
+                            std::cout << "\n";
+
+                            log_info::print_log_info();
+                            std::exit(0);
+                        }
+
+                        kissat_release(solver);
                     }
-                }while(++bipartitEdgesBitmap != false);
+                    nextEdgeConfiguration = ++bipartitEdgesBitmap;
+                }
                 ++scoresDominatedVertices;
             }
             /*
@@ -148,5 +199,6 @@ namespace csc{
                 kissat_release(solver);
             }*/
         }
+        log_info::print_log_info();
     }
 }
