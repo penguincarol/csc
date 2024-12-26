@@ -3,6 +3,7 @@
 #include <cstdint>
 
 struct ScoreVector{
+public:
     ScoreVector(size_t num_vertices_managed, uint8_t maximum_score): score_vector(num_vertices_managed, 0), maximum_score(maximum_score){};
 
     ScoreVector& operator++(){

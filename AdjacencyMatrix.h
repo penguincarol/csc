@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <vector>
 #include "constants.h"
+#include "BitMapsForScoreVector.h"
 
 using namespace std;
 namespace csc{
@@ -16,6 +17,9 @@ namespace csc{
         [[nodiscard]] bool isTournamentGraph() const;
 
         void setEdgesAccordingToIndex(size_t index);
+
+        void setBipartitEdges(const BitMapsForScoreVector& bitmaps, size_t number_dominated);
+        void setNonBipartitEdgesAccordingToIndex(size_t index, size_t number_dominated);
     private:
         array<array<bool, num_vertices>, num_vertices> adjacency_matr;
 

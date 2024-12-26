@@ -1,4 +1,5 @@
 #include "AdjacencyMatrix.h"
+#include "BitMapsForScoreVector.h"
 
 #include <cassert>
 #include <iostream>
@@ -143,6 +144,48 @@ namespace csc{
                 }
             }
             std::cout << "\n";
+        }
+    }
+
+    void AdjacencyMatrix::setBipartitEdges(const BitMapsForScoreVector &bitmaps, const size_t number_dominated) {
+        for(size_t i_bitmap=0; i_bitmap < bitmaps.bitmaps.size(); i_bitmap++){
+            const auto& bitmap = bitmaps.bitmaps[i_bitmap];
+            const vertex addressed_vertex = i_bitmap + 2; //the first bitmap (i_bitmap=0) corresponds to node 2
+            for(size_t i_edge=0; i_edge < bitmap.current().size(); i_edge++){
+                const vertex target = i_edge + number_dominated + 1;    //TODO: step through with debug to see if this is correct
+                if(bitmap.current()[i_edge]){
+                    setEdge(addressed_vertex, target);
+                }else{
+                    setEdge(target, addressed_vertex);
+                }
+            }
+        }
+    }
+
+    void AdjacencyMatrix::setNonBipartitEdgesAccordingToIndex(size_t index, size_t number_dominated) {
+        size_t counter = 0;
+        //setEdges in dominated-subgraph
+        for(vertex v1 = 1; v1 < number_dominated; v1++){
+            for(vertex v2 = v1+1; v2 <= number_dominated; v2++){
+                if((index>>counter)&0b1){
+                    setEdge(v1, v2);
+                }else{
+                    setEdge(v2, v1);
+                }
+                counter++;
+            }
+        }
+
+        //setEdges in dominator-subgraph
+        for(vertex v1 = number_dominated+1; v1 < num_vertices-1; v1++){
+            for(vertex v2 = v1+1; v2 < num_vertices; v2++){
+                if((index>>counter)&0b1){
+                    setEdge(v1, v2);
+                }else{
+                    setEdge(v2, v1);
+                }
+                counter++;
+            }
         }
     }
 

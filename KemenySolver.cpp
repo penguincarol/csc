@@ -2,6 +2,7 @@
 #include "AdjacencyMatrix.h"
 #include "Edge.h"
 #include "ScoreVector.h"
+#include "BitMapsForScoreVector.h"
 
 extern "C" {
 #include "kissat.h"
@@ -47,20 +48,61 @@ namespace csc{
         AdjacencyMatrix m{};
         //(num_vertices-1 +1)/2 should be read as rounding up (num_vertices-1)/2
         for(size_t kemeny_score_node_0 = (num_vertices-1 +1)/2; kemeny_score_node_0 <= num_vertices-1; kemeny_score_node_0++){
-            //std::vector<uint8_t> kemeny_scores_dominated(kemeny_score_node_0, 0);
-            //std::vector<uint8_t> kemeny_scores_dominators(num_vertices - 1 - kemeny_score_node_0, 0);
-
+            const size_t start_index_dominators = kemeny_score_node_0+1;
+            const size_t start_index_dominated = 1;
+            const size_t number_dominators = num_vertices - kemeny_score_node_0 - 1;
+            const size_t number_dominated = kemeny_score_node_0;
             //set edges of node 0
-            for(size_t i = 1; i <= kemeny_score_node_0; i++){
+            for(size_t i = start_index_dominated; i < start_index_dominators; i++){
                 m.setEdge(0, i);
-            } for(size_t i = kemeny_score_node_0+1; i < num_vertices; i++){
+            } for(size_t i = start_index_dominators; i < num_vertices; i++){
                 m.setEdge(i, 0);
             }
+            std::cout << "here\n";
 
-            //ScoreVector scoresDominators(kemeny_score_node_0, kemeny_score_node_0);
-            //ScoreVector firstInvalidScoreV(scoresDominators.end());
+            //there are kemeny_score_node_0 many vertices that are being dominated by node 0. their maximum score can be kemeny_score_node_0
+            ScoreVector scoresDominatedVertices(kemeny_score_node_0, kemeny_score_node_0);
+            ScoreVector firstInvalidScoreV(scoresDominatedVertices.end());
+            while(scoresDominatedVertices != firstInvalidScoreV){
+                std::cout << "here2\n";
 
+                //set edges between node 1 (dominated by node 0) and the dominators of node 0
+                {
+                    size_t goal = std::min(num_vertices, start_index_dominators + scoresDominatedVertices.score_vector[0]);
+                    for (vertex i = start_index_dominators;
+                         i < goal; i++) {
+                        //anchor
+                        m.setEdge(1, i);
+                    }
+                    for (vertex i = start_index_dominators + scoresDominatedVertices.score_vector[0];
+                         i < num_vertices; i++) {
+                        m.setEdge(i, 1);
+                    }
+                }
 
+                //the bitmaps define the edges between the dominators and the dominated (w.r.t. node 0).
+                //obviously the graph is not bipartit, but these are the "bipartit edges" between those 2 sets of nodes
+                BitMapsForScoreVector bipartitEdgesBitmap(scoresDominatedVertices, number_dominators);
+                do{
+                    m.setBipartitEdges(bipartitEdgesBitmap, number_dominated);
+                    std::cout << "here3\n";
+                    const size_t number_of_remaining_edges = (number_dominated*(number_dominated-1)/2) + ((number_dominators*(number_dominators-1))/2);
+                    const size_t number_edge_configurations = (1 << number_of_remaining_edges); //2^(number_of_remaining_edges)
+                    for(size_t i = 0; i < number_edge_configurations; i++){
+                        m.setNonBipartitEdgesAccordingToIndex(i, number_dominated);
+                        //TODO: tournament graph should be set here and we can create SAT-formula
+                        //TODO: can still filter out if kemeny-score of individual vertices is too high, or number of cycles is low enough..
+                        std::cout << "next graph: \n";
+                        m.print();
+                        if(!m.isTournamentGraph()){
+                            std::cout<<  "not a tournament graph\n";
+                            exit(0);
+                        }
+                    }
+                }while(++bipartitEdgesBitmap != false);
+                ++scoresDominatedVertices;
+            }
+            /*
             size_t number_of_edge_configurations = (1 << ((num_vertices-1)*(num_vertices-2) / 2)); //2^(number_of_remaining_edges) (after fixing edges of node 0)
             for(size_t i = 0; i < number_of_edge_configurations; i++){
                 if(i%100 == 0){
@@ -104,7 +146,7 @@ namespace csc{
                 }
 
                 kissat_release(solver);
-            }
+            }*/
         }
     }
 }
