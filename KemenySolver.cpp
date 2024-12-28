@@ -96,6 +96,10 @@ namespace csc{
                     const size_t number_of_remaining_edges = (number_dominated*(number_dominated-1)/2) + ((number_dominators*(number_dominators-1))/2);
                     const size_t number_edge_configurations = (1 << number_of_remaining_edges); //2^(number_of_remaining_edges)
                     for(size_t i = 0; i < number_edge_configurations; i++){
+                        if(i%100 == 0){
+                            std::cout << "graph " << i << " of " << number_edge_configurations << "\n";
+                        }
+
                         m.setNonBipartitEdgesAccordingToIndex(i, number_dominated);
                         //TODO: tournament graph should be set here and we can create SAT-formula
                         //TODO: can still filter out if kemeny-score of individual vertices is too high, or number of cycles is low enough..
@@ -115,6 +119,10 @@ namespace csc{
                             log_info::counter_non_trivial_instances +=1;
                         }
                         EdgeToLiteral e2l(cycles);
+                        if(i%100 == 0){
+                            std::cout << "num-cycles: " << cycles.size() << "\n";
+                            std::cout << "num-variables: " << e2l.counter << "\n";
+                        }
                         kissat *solver = kissat_init();
                         for(auto& cycle: cycles){
                             for(size_t v=1; v < cycle.size(); v++){
