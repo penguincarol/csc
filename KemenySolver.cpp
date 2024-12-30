@@ -57,6 +57,10 @@ namespace csc{
         AdjacencyMatrix m{};
         //(num_vertices-1 +1)/2 should be read as rounding up (num_vertices-1)/2
         for(size_t kemeny_score_node_0 = (num_vertices-1 +1)/2; kemeny_score_node_0 <= num_vertices-1; kemeny_score_node_0++){
+            if(kemeny_score_node_0 == num_vertices-1){
+                std::cout << "the following runtime might be unnecessary. Every scenario where node0 is not a condorcet-winner are checked. current counters: \n";
+                log_info::print_log_info();
+            }
             const size_t start_index_dominators = kemeny_score_node_0+1;
             const size_t start_index_dominated = 1;
             const size_t number_dominators = num_vertices - kemeny_score_node_0 - 1;
@@ -123,6 +127,7 @@ namespace csc{
                             std::cout << "num-cycles: " << cycles.size() << "\n";
                             std::cout << "num-variables: " << e2l.counter << "\n";
                         }
+#ifndef ONLY_COUNT_PLEASE
                         kissat *solver = kissat_init();
                         for(auto& cycle: cycles){
                             for(size_t v=1; v < cycle.size(); v++){
@@ -156,6 +161,8 @@ namespace csc{
                         }
 
                         kissat_release(solver);
+#endif
+
                     }
                     nextEdgeConfiguration = ++bipartitEdgesBitmap;
                 }
