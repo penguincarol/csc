@@ -56,7 +56,7 @@ namespace csc{
     void solveKemeny(){
         AdjacencyMatrix m{};
         //(num_vertices-1 +1)/2 should be read as rounding up (num_vertices-1)/2
-        for(size_t kemeny_score_node_0 = (num_vertices-1 +1)/2; kemeny_score_node_0 <= num_vertices-1; kemeny_score_node_0++){
+        for(size_t kemeny_score_node_0 = (num_vertices-1 +1)/2; kemeny_score_node_0 <= num_vertices-1 -1; kemeny_score_node_0++){
             if(kemeny_score_node_0 == num_vertices-1){
                 std::cout << "the following runtime might be unnecessary. Every scenario where node0 is not a condorcet-winner are checked. current counters: \n";
                 log_info::print_log_info();
@@ -105,9 +105,8 @@ namespace csc{
                         }
 
                         m.setNonBipartitEdgesAccordingToIndex(i, number_dominated);
-                        //TODO: tournament graph should be set here and we can create SAT-formula
                         //TODO: can still filter out if kemeny-score of individual vertices is too high, or number of cycles is low enough..
-#ifdef DEBUG
+#ifdef DEBUG1
                         std::cout << "next graph: \n";
                         m.print();
                         if(!m.isTournamentGraph()){
@@ -123,10 +122,13 @@ namespace csc{
                             log_info::counter_non_trivial_instances +=1;
                         }
                         EdgeToLiteral e2l(cycles);
+
+#ifdef DEBUG2
                         if(i%100 == 0){
                             std::cout << "num-cycles: " << cycles.size() << "\n";
                             std::cout << "num-variables: " << e2l.counter << "\n";
                         }
+#endif
 #ifndef ONLY_COUNT_PLEASE
                         kissat *solver = kissat_init();
                         for(auto& cycle: cycles){
