@@ -33,3 +33,7 @@ We can now start the program
 ```console
 ./csc
 ```
+
+I advise trying out the program in one configuration, where the program should realize, 
+that all problem instances are solvable (for example num_vertices=5, number_of_removable_edges=3)
+and one configuration, where this is not the case (for example num_vertices=5, number_of_removable_edges=2).
